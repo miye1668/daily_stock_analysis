@@ -55,31 +55,6 @@ jobs:
       - name: 创建必要目录
         run: |
           mkdir -p data logs reports
-
-      - name: 生成A股自选股列表（排除ST/创业/科创）
-        if: ${{ !vars.STOCK_LIST && !secrets.STOCK_LIST }}
-        run: |
-          python - <<'PY'
-          import os, sys, subprocess
-          try:
-              import akshare as ak
-          except Exception:
-              subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'akshare', 'pandas'])
-              import akshare as ak
-          df = ak.stock_zh_a_spot_em()[['代码','名称']].copy()
-          df = df[~df['名称'].str.contains('ST|退', regex=True)]
-          def keep(code):
-              code = str(code)
-              if code.startswith(('300','301','688','689','8','43','83')):
-                  return False
-              return code.startswith(('000','001','002','003','600','601','603','605'))
-          df = df[df['代码'].apply(keep)]
-          codes = df['代码'].astype(str).tolist()
-          stock_list = ','.join(codes)
-          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as f:
-              f.write(f"STOCK_LIST={stock_list}\n")
-          print(f"Generated STOCK_LIST count: {len(codes)}")
-          PY
       
       - name: 执行股票分析
         env:
